@@ -1,0 +1,715 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Kelime Bulma Oyunu</title>
+  <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;700&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/lottie-web/5.9.6/lottie.min.js"></script>
+  <style>
+    /* Genel stil ayarları */
+    * {
+      margin: 0;
+      padding: 0;
+      font-family: "Baloo 2", sans-serif;
+    }
+    body {
+      text-align: center;
+      background-color: #f7f7f7;
+      padding: 10px;
+      overflow-x: hidden;
+    }
+    header {
+      font-size: 1.5em;
+      color: antiquewhite;
+      margin-bottom: 1em;
+      padding-top: 1em;
+      font-weight: 100;
+    }
+    /* Arka plan container */
+    .container {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100vh;
+      background: url("https://raw.githubusercontent.com/kOOnzTe/Words-of-Wonders/refs/heads/main/img/background.jpg") no-repeat center center;
+      background-size: cover;
+      z-index: -1;
+    }
+    /* Oyun alanı: Game board tablosu */
+    table.game-board {
+      margin-top: 100px;
+      margin-bottom: 1em;
+      border-collapse: separate;
+      border-spacing: 5px;
+      display: inline-block;
+    }
+    table.game-board td {
+      width: 50px;
+      height: 50px;
+      line-height: 50px;
+      text-align: center;
+      font-size: 1.2em;
+      font-weight: bold;
+      border-radius: 5px;
+      background-color: #fff;
+      border: 2px solid #ccc;
+      transition: background-color 0.3s ease, transform 0.3s ease;
+    }
+    /* Harf bulunan kutular: Başlangıçta harfler gizli */
+    table.game-board td.has-letter {
+      color: transparent;
+    }
+    /* Harf bulunmayan kutular */
+    table.game-board td.has-no-letter {
+      opacity: 0;
+      border: none;
+    }
+    button:hover {
+      cursor: pointer;
+    }
+    /* Doğru kelime bulunduğunda */
+    .revealed {
+      background-color: rgba(255, 0, 255, 1) !important;
+      color: white !important;
+      font-weight: bold;
+    }
+    .hint-active {
+      color: rgba(0, 0, 0, 0.9);
+      transition: all ease 0.7s;
+    }
+    /* Harf pad stili */
+    .letter-pad-container {
+      background-color: white;
+      border-radius: 50%;
+      width: 250px;
+      height: 250px;
+      position: relative;
+      margin: 0 auto;
+      margin-top: 20px;
+    }
+    .icon-32 { width: 32px; height: 32px; }
+    .icon-48 { width: 48px; height: 48px; }
+    #gold-video {
+      position: fixed;
+      top: 10px;
+      left: 10px;
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+    }
+    #Yazim {
+      font-size: 0.8em;
+      color: white; /* Beyaz renk */
+      font-weight: bold; /* Kalın yazı */
+    }
+    /* Harf butonları */
+    .letter {
+      width: 100px;
+      height: 100px;
+      line-height: 100px;
+      font-size: 4em;
+      text-align: center;
+      border-radius: 50%;
+      position: absolute;
+      font-weight: 600;
+      border: none;
+      background-color: transparent;
+      transition: all ease 0.5s;
+      z-index: 10;
+    }
+    /* Konumlandırmalar */
+    .letter:nth-of-type(1) { left: 90px; }
+    .letter:nth-of-type(2) { left: 10px; top: 70px; }
+    .letter:nth-of-type(3) { left: 40px; bottom: 20px; }
+    .letter:nth-of-type(4) { right: 10px; top: 70px; }
+    .letter:nth-of-type(5) { right: 40px; bottom: 20px; }
+    .letter:nth-of-type(6) { right: 100px; bottom: 5px; }
+    .letter.selected {
+      background-color: rgba(255, 0, 255, 1);
+      color: white;
+      transition: all ease 0.5s;
+    }
+    .mix-button {
+      background-color: transparent;
+      border: none;
+      padding: 0;
+      cursor: pointer;
+    }
+    .mix-icon {
+      width: 40px;
+      height: 40px;
+      display: block;
+      position: absolute;
+      left: 60px;
+      bottom: 70px;
+      margin: 50px;
+      transform: translate(-10px, 10px);
+    }
+    .mix-button:hover { opacity: 50%; }
+    .hint-button-container {
+      display: flex;
+      justify-content: center;
+      margin-top: 10px;
+    }
+    .hint {
+      margin: 8px;
+      width: 48px;
+      height: 48px;
+      line-height: 48px;
+      text-align: center;
+      border: none;
+      background-color: #7b1fa2;
+      color: #fdd835;
+      border-radius: 50%;
+      border: 2px solid white;
+      transition: all 0.5s ease;
+    }
+    .hint:hover { transform: scale(1.2); }
+    .selected-letters {
+      font-size: 25px;
+      font-weight: 600;
+      color: white;
+      background-color: blue;
+      border-radius: 20px;
+      width: fit-content;
+      padding: 8px 12px;
+      top: -40px;
+      position: absolute;
+      left: 50%;
+      transform: translate(-50%, 0);
+      display: none;
+    }
+    #click-effect-circle {
+      width: 50px;
+      height: 50px;
+      border: solid 2px blue;
+      font-weight: bold;
+      border-radius: 50%;
+      position: absolute;
+      display: none;
+      transform-origin: center;
+    }
+    #level-banner {
+      position: fixed;
+      top: 30px;
+      left: 50%;
+      transform: translateX(-50%);
+      background-color: rgba(255, 0, 255, 1);
+      color: white;
+      padding: 12px 24px;
+      font-size: 1.3em;
+      font-weight: bold;
+      border-radius: 25px;
+      text-align: center;
+      z-index: 100;
+      box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+      border: 2px solid #007bff;
+      min-width: 120px;
+      display: inline-block;
+    }
+    /* Dokunma izinin çizileceği canvas */
+    #line-canvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      pointer-events: none;
+      z-index: 10;
+    }
+    /* Tamamlanma ekranı overlay stili ve animasyonu */
+    @keyframes fadeIn {
+      from { opacity: 0; transform: scale(0.9); }
+      to { opacity: 1; transform: scale(1); }
+    }
+    .completion-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100vh;
+      background-color: rgba(0, 0, 0, 0.8);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      z-index: 200;
+      animation: fadeIn 0.5s ease-out;
+      overflow-y: auto;
+    }
+    .completion-overlay .message {
+      font-size: 2.5em;
+      color: #4CAF50;
+      margin-top: 20px;
+      margin-bottom: 20px;
+    }
+    /* Deneyim çemberi: ekranın ortasında */
+    .experience-circle {
+      width: 200px;
+      height: 200px;
+      border-radius: 50%;
+      background-color: #3F51B5;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 20px;
+    }
+    .experience-circle .experience {
+      font-size: 1.5em;
+      color: white;
+      text-align: center;
+    }
+    /* Progress bar ve hediyenin yer aldığı wrapper */
+    .progress-wrapper {
+      display: flex;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+    .progress-container {
+      position: relative;
+      width: 300px;
+      height: 30px;
+      background-color: #ddd;
+      border-radius: 15px;
+      overflow: hidden;
+    }
+    .progress-bar {
+      height: 100%;
+      background-color: #4CAF50;
+      width: 60%;
+      transition: width 0.5s ease;
+    }
+    .progress-text {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      text-align: center;
+      line-height: 30px;
+      color: white;
+      font-weight: bold;
+      pointer-events: none;
+    }
+    .gift-icon {
+      margin-left: 10px;
+      font-size: 1.5em;
+      color: #FF9800;
+    }
+    .next-level-text {
+      font-size: 1.5em;
+      color: white;
+      background-color: #009688;
+      padding: 15px 30px;
+      border-radius: 10px;
+      cursor: pointer;
+      margin-bottom: 20px;
+      transition: transform 0.3s ease;
+    }
+    .next-level-text:hover {
+      transform: scale(1.05);
+    }
+    @media screen and (max-width: 600px) {
+      header { font-size: 1.2em; font-weight: bold; }
+      .letter { width: 60px; height: 60px; line-height: 60px; font-size: 1.8em; }
+      .mix-button { width: 40px; height: 40px; }
+      .hint { width: 40px; height: 40px; }
+      table.game-board td { width: 40px; height: 40px; line-height: 40px; }
+      .experience-circle { width: 150px; height: 150px; }
+      .experience-circle .experience { font-size: 1.2em; }
+      .progress-container { width: 250px; height: 25px; }
+      .progress-text { line-height: 25px; }
+      .next-level-text { padding: 10px 20px; font-size: 1.2em; }
+    }
+  </style>
+</head>
+<body>
+  <video id="gold-video" autoplay loop muted>
+    <source src="gold-animation.mp4" type="video/mp4">
+    Tarayıcınız video etiketini desteklemiyor.
+  </video>
+  <div id="Yazim">İSMAİL HAKKI ACAY - KELİME OYUNU</div>
+  <!-- Dokunma izinin çizileceği canvas -->
+  <canvas id="line-canvas"></canvas>
+  <div class="container"></div>
+  <div class="game-content">
+    <!-- Oyun alanı (game board) -->
+    <table class="game-board">
+      <tbody>
+        <tr>
+          <td class="has-no-letter"></td>
+          <td class="has-no-letter"></td>
+          <td class="has-no-letter"></td>
+          <td class="has-letter">H</td>
+          <td class="has-letter">A</td>
+          <td class="has-letter">K</td>
+        </tr>
+        <tr>
+          <td class="has-no-letter"></td>
+          <td class="has-letter">K</td>
+          <td class="has-no-letter"></td>
+          <td class="has-no-letter"></td>
+          <td class="has-letter">Y</td>
+          <td class="has-no-letter"></td>
+        </tr>
+        <tr>
+          <td class="has-letter">K</td>
+          <td class="has-letter">A</td>
+          <td class="has-letter">H</td>
+          <td class="has-letter">Y</td>
+          <td class="has-letter">A</td>
+          <td class="has-no-letter"></td>
+        </tr>
+        <tr>
+          <td class="has-no-letter"></td>
+          <td class="has-letter">Y</td>
+          <td class="has-no-letter"></td>
+          <td class="has-no-letter"></td>
+          <td class="has-letter">K</td>
+          <td class="has-no-letter"></td>
+        </tr>
+        <tr>
+          <td class="has-letter">Y</td>
+          <td class="has-letter">A</td>
+          <td class="has-letter">K</td>
+          <td class="has-letter">A</td>
+          <td class="has-no-letter"></td>
+          <td class="has-no-letter"></td>
+        </tr>
+      </tbody>
+    </table>
+    <div class="hint-button-container">
+      <button type="button" class="hint">Yardım</button>
+    </div>
+    <div class="letter-pad-container">
+      <!-- Harf butonları -->
+      <button type="button" class="letter">K</button>
+      <button type="button" class="letter">Y</button>
+      <button type="button" class="letter">A</button>
+      <button type="button" class="letter">A</button>
+      <button type="button" class="letter">H</button>
+      <button type="button" class="mix-button">
+        <img src="https://raw.githubusercontent.com/kOOnzTe/Words-of-Wonders/refs/heads/main/img/shuffle.png" alt="Karıştır" class="mix-icon">
+      </button>
+      <div class="selected-letters"></div>
+    </div>
+    <div id="level-banner">1. Bölüm</div>
+    <div id="click-effect-circle"></div>
+    <div id="toast"></div>
+  </div>
+  <script src="https://code.jquery.com/jquery-3.6.2.min.js"></script>
+  <script>
+    // Canvas ayarları
+    var canvas = document.getElementById("line-canvas");
+    var ctx = canvas.getContext("2d");
+    function resizeCanvas() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    }
+    resizeCanvas();
+    window.addEventListener("resize", resizeCanvas);
+    
+    var selectedLetters = "";
+    var currentSelectedLetters = [];
+    var isTouching = false;
+    var foundWords = {};
+    
+    function setLineStyle() {
+      ctx.lineCap = "round"; 
+      ctx.lineJoin = "round"; 
+      ctx.lineWidth = 12;
+      ctx.strokeStyle = "rgba(255, 0, 255, 1)";
+    }
+    function getConnectionPoint(element, targetCenter) {
+      var $el = $(element);
+      var offset = $el.offset();
+      var w = $el.width();
+      var h = $el.height();
+      var cx = offset.left + w / 2;
+      var cy = offset.top + h / 2;
+      var dx = targetCenter.x - cx;
+      var dy = targetCenter.y - cy;
+      var d = Math.sqrt(dx * dx + dy * dy) || 1;
+      if ($el.hasClass("circle")) {
+        var r = w / 2;
+        return { x: cx + (dx / d) * r, y: cy + (dy / d) * r };
+      }
+      return { x: cx, y: cy };
+    }
+    function getTriangleVertices($el) {
+      var offset = $el.offset();
+      var w = $el.width();
+      var h = $el.height();
+      return [
+        { x: offset.left + w / 2, y: offset.top },
+        { x: offset.left, y: offset.top + h },
+        { x: offset.left + w, y: offset.top + h }
+      ];
+    }
+    function findClosestEdgeIntersection(start, target, vertices) {
+      var closestPoint = null;
+      var minDist = Infinity;
+      for (var i = 0; i < vertices.length; i++) {
+        var v1 = vertices[i];
+        var v2 = vertices[(i + 1) % vertices.length];
+        var intersect = getLineSegmentIntersection(start, target, v1, v2);
+        if (intersect) {
+          var dist = Math.sqrt(Math.pow(intersect.x - start.x, 2) + Math.pow(intersect.y - start.y, 2));
+          if (dist < minDist) {
+            minDist = dist;
+            closestPoint = intersect;
+          }
+        }
+      }
+      return closestPoint || start;
+    }
+    function getLineSegmentIntersection(p1, p2, p3, p4) {
+      var s1_x = p2.x - p1.x,
+          s1_y = p2.y - p1.y,
+          s2_x = p4.x - p3.x,
+          s2_y = p4.y - p3.y;
+      var s, t;
+      s = (-s1_y * (p1.x - p3.x) + s1_x * (p1.y - p3.y)) / (-s2_x * s1_y + s1_x * s2_y);
+      t = (s2_x * (p1.y - p3.y) - s2_y * (p1.x - p3.x)) / (-s2_x * s1_y + s1_x * s2_y);
+      if (s >= 0 && s <= 1 && t >= 0 && t <= 1) {
+        return { x: p1.x + t * s1_x, y: p1.y + t * s1_y };
+      }
+      return null;
+    }
+    function updateLine(touchPos) {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      if (currentSelectedLetters.length === 0) return;
+      setLineStyle();
+      var points = [];
+      for (var i = 0; i < currentSelectedLetters.length; i++) {
+        var $el = $(currentSelectedLetters[i]);
+        var offset = $el.offset();
+        var w = $el.width();
+        var h = $el.height();
+        var cx = offset.left + w / 2;
+        var cy = offset.top + h / 2;
+        points.push({ x: cx, y: cy, element: $el });
+      }
+      ctx.beginPath();
+      for (var i = 0; i < points.length - 1; i++) {
+        var p1 = points[i];
+        var p2 = points[i + 1];
+        var start = getConnectionPoint(p1.element, p2);
+        var end = getConnectionPoint(p2.element, p1);
+        if (i === 0) { ctx.moveTo(start.x, start.y); }
+        ctx.lineTo(end.x, end.y);
+      }
+      if (touchPos) {
+        var last = points[points.length - 1];
+        var lastBoundary = getConnectionPoint(last.element, touchPos);
+        ctx.lineTo(lastBoundary.x, lastBoundary.y);
+      }
+      ctx.stroke();
+      currentSelectedLetters.forEach(function(el) {
+        var $el = $(el);
+        if ($el.hasClass("circle")) {
+          var offset = $el.offset();
+          var w = $el.width();
+          var h = $el.height();
+          var cx = offset.left + w / 2;
+          var cy = offset.top + h / 2;
+          var r = w / 2;
+          ctx.beginPath();
+          ctx.arc(cx, cy, r + ctx.lineWidth / 2, 0, Math.PI * 2);
+          ctx.fillStyle = "white";
+          ctx.fill();
+          ctx.beginPath();
+          ctx.arc(cx, cy, r, 0, Math.PI * 2);
+          ctx.strokeStyle = "rgba(255, 0, 255, 1)";
+          ctx.lineWidth = 2;
+          ctx.stroke();
+        }
+      });
+    }
+    $(document).on('touchmove', function(e) {
+      e.preventDefault();
+      if (isTouching) {
+        var touchPos = e.originalEvent.touches[0];
+        updateLine(touchPos);
+      }
+    });
+    function checkWord() {
+      console.log("Seçilen kelime:", selectedLetters);
+      if (levels[selectedLetters]) {
+        if (!foundWords[selectedLetters]) {
+          foundWords[selectedLetters] = true;
+          levels[selectedLetters].forEach(function(e) {
+            var rowIndex = e[1];
+            var colIndex = e[2];
+            $("tr:nth-of-type(" + rowIndex + ") > td:nth-of-type(" + colIndex + ")")
+              .addClass("revealed")
+              .removeClass("hint-active");
+          });
+        }
+      } else {
+        console.log("Kelime bulunamadı:", selectedLetters);
+      }
+      selectedLetters = "";
+      currentSelectedLetters = [];
+      $(".letter").removeClass("selected");
+      if (Object.keys(foundWords).length === Object.keys(levels).length) {
+        showCompletionScreen();
+      }
+    }
+    function resetLetterColors() {
+      $(".letter").removeClass("selected");
+      selectedLetters = "";
+      currentSelectedLetters = [];
+    }
+    function shuffleLetters() {
+      var letters = "KYAHA".split("");
+      $(".letter").each(function() {
+        var i = Math.floor(Math.random() * letters.length);
+        var letter = letters[i];
+        letters.splice(i, 1);
+        $(this).text(letter);
+      });
+    }
+    function getLetterAtPosition(touchPos) {
+      var letterElements = $(".letter");
+      for (var i = 0; i < letterElements.length; i++) {
+        var letterElement = $(letterElements[i]);
+        var offset = letterElement.offset();
+        var width = letterElement.width();
+        var height = letterElement.height();
+        if (
+          touchPos.pageX >= offset.left &&
+          touchPos.pageX <= offset.left + width &&
+          touchPos.pageY >= offset.top &&
+          touchPos.pageY <= offset.top + height
+        ) {
+          return letterElement[0];
+        }
+      }
+      return null;
+    }
+    function showCompletionScreen() {
+      var overlay = document.createElement('div');
+      overlay.className = 'completion-overlay';
+      
+      var message = document.createElement('div');
+      message.className = 'message';
+      message.textContent = "Tebrikler!";
+      overlay.appendChild(message);
+      
+      var expCircle = document.createElement('div');
+      expCircle.className = 'experience-circle';
+      var experience = document.createElement('div');
+      experience.className = 'experience';
+      experience.textContent = "5 DENEYİM";
+      expCircle.appendChild(experience);
+      overlay.appendChild(expCircle);
+      
+      var progressWrapper = document.createElement('div');
+      progressWrapper.className = 'progress-wrapper';
+      
+      var progressContainer = document.createElement('div');
+      progressContainer.className = 'progress-container';
+      var progressBar = document.createElement('div');
+      progressBar.className = 'progress-bar';
+      progressBar.style.width = '10%';
+      progressContainer.appendChild(progressBar);
+      
+      var progressText = document.createElement('div');
+      progressText.className = 'progress-text';
+      progressText.textContent = '';
+      progressContainer.appendChild(progressText);
+      progressWrapper.appendChild(progressContainer);
+      
+      var giftIcon = document.createElement('div');
+      giftIcon.className = 'gift-icon';
+      giftIcon.textContent = '1/10 🎁';
+      progressWrapper.appendChild(giftIcon);
+      
+      overlay.appendChild(progressWrapper);
+      
+      var nextLevelText = document.createElement('div');
+      nextLevelText.className = 'next-level-text';
+      nextLevelText.textContent = "BÖLÜM 2";
+      nextLevelText.onclick = nextLevel;
+      overlay.appendChild(nextLevelText);
+      
+      document.body.appendChild(overlay);
+    }
+    function nextLevel() {
+      // Dış bağlantıya yönlendirme örneği:
+      window.location.href = "https://www.ornek.com";
+    }
+    $(document).ready(function() {
+      $(".letter").on("click", function(e) {
+        if (!isTouching) {
+          selectedLetters += $(this).text();
+          currentSelectedLetters.push(this);
+          $(this).addClass("selected");
+          checkWord();
+        }
+      });
+      $(".letter").on("touchstart", function(e) {
+        isTouching = true;
+        selectedLetters += $(this).text();
+        currentSelectedLetters.push(this);
+        $(this).addClass("selected");
+      });
+      $(".letter").on("touchmove", function(e) {
+        if (!isTouching) return;
+        var touchPos = e.originalEvent.touches[0];
+        var targetLetter = getLetterAtPosition(touchPos);
+        if (targetLetter && !$(targetLetter).hasClass("selected")) {
+          selectedLetters += $(targetLetter).text();
+          currentSelectedLetters.push(targetLetter);
+          $(targetLetter).addClass("selected");
+        }
+      });
+      $(".letter").on("touchend", function(e) {
+        if (isTouching) {
+          isTouching = false;
+          checkWord();
+          resetLetterColors();
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+        }
+      });
+      $(".mix-button").on("click", function() {
+        shuffleLetters();
+      });
+    });
+    var levels = {
+      HAK: [
+        ["H", 1, 4],
+        ["A", 1, 5],
+        ["K", 1, 6]
+      ],
+      AYAK: [
+        ["A", 1, 5],
+        ["Y", 2, 5],
+        ["A", 3, 5],
+        ["K", 4, 5]
+      ],
+      KAYA: [
+        ["K", 2, 2],
+        ["A", 3, 2],
+        ["Y", 4, 2],
+        ["A", 5, 2]
+      ],
+      KAHYA: [
+        ["K", 3, 1],
+        ["A", 3, 2],
+        ["H", 3, 3],
+        ["Y", 3, 4],
+        ["A", 3, 5]
+      ],
+      YAKA: [
+        ["Y", 5, 1],
+        ["A", 5, 2],
+        ["K", 5, 3],
+        ["A", 5, 4]
+      ]
+    };
+  </script>
+</body>
+</html>
